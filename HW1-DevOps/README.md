@@ -9,12 +9,12 @@ NC State University: CSC 519 - DevOps
 - [PDF](HW1_requirements.pdf)
 
 ### How to Run:
-- run 'npm install'
-- run 'npm link'
-- To create VM, run 'v up'
-- To ssh into VM, run 'v ssh'
-- run 'cd App'
-- run 'node main.js start 9000'
+- run `npm install`
+- run `npm link`
+- To create VM, run `v up`
+- To ssh into VM, run `v ssh`
+- run `cd App`
+- run `node main.js start 9000`
 
 ### Screencast
 
