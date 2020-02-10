@@ -6,7 +6,7 @@ NC State University: CSC 519 - DevOps
 
 ### Requirements
 - Website: https://github.com/CSC-DevOps/Course/blob/master/HW/HW1-V.md
-- [PDF](HW0_requirements.pdf)
+- [PDF](HW1_requirements.pdf)
 
 ### How to Run:
 - run 'npm install'
