@@ -5,7 +5,8 @@ NC State University: CSC 519 - DevOps
 #### HW1 - Basic Virtualization
 
 ### Requirements
-- https://github.com/CSC-DevOps/Course/blob/master/HW/HW1-V.md
+- Website: https://github.com/CSC-DevOps/Course/blob/master/HW/HW1-V.md
+- [PDF](HW0_requirements.pdf)
 
 ### How to Run:
 - run 'npm install'
