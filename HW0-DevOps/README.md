@@ -8,7 +8,7 @@ CSC 519 - DevOps
 
 - Provision and configure two cloud providers and ssh into the two VMs
 - Full Requirements: https://github.com/CSC-DevOps/Course/blob/master/HW/HW0-Provision.md
-- [PDF](HW0_requirements)
+- [PDF](HW0_requirements.pdf)
 
 ## Screencasts Links:
 
