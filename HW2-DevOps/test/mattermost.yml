@@ -1,0 +1,25 @@
+- group:
+    description: "Basic checks for dependencies"
+    checks:
+      - version:
+         cmd: mysql --version
+         range: ^5.7.x
+      - availability:
+          port: 8065
+          status: 200
+          url: /
+      - reachable:
+         - /opt/mattermost/data
+         - /lib/systemd/system/mattermost.service
+      - service:
+         name: mattermost
+         status: active
+      - service:
+         name: mysql
+         status: active
+      - contains:
+         file: /opt/mattermost/config/config.json
+         string: '"DriverName": "mysql"'
+      # - reachable: 
+      #    - path: /root
+      #      permission: 700

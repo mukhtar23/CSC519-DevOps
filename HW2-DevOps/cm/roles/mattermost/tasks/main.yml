@@ -1,0 +1,100 @@
+---
+- name: Download mattermost
+  become: yes
+  get_url:
+    url: "https://releases.mattermost.com/{{mattermostVersion}}/mattermost-{{mattermostVersion}}-linux-amd64.tar.gz"
+    dest: "{{installDir}}"
+
+- name: extract mattermost server files
+  become: yes
+  unarchive: 
+    src: "{{installDir}}mattermost-{{mattermostVersion}}-linux-amd64.tar.gz"
+    dest: "{{installDir}}"
+    remote_src: yes
+
+- name: copy extracted files to /opt directory
+  become: yes
+  copy:
+    src: "{{installDir}}mattermost"
+    dest: /opt
+    remote_src: yes
+
+- name: create storage directory for files
+  become: yes
+  file:
+    path: /opt/mattermost/data
+    state: directory
+
+- name: Ensure group "mattermost" exists, if not create it
+  become: yes
+  group:
+    name: "{{mattermostGroup}}"
+    state: present
+
+- name: Add the user 'mattermost_user'
+  become: yes
+  user:
+    name: "{{mattermostUser}}"
+    group: "{{mattermostGroup}}"
+
+- name: Change file ownership, group, and permissions of mattermost files
+  become: yes
+  file:
+    path: /opt/mattermost
+    owner: "{{mattermostUser}}"
+    group: "{{mattermostGroup}}"
+    recurse: yes
+    mode: g=w
+
+- name: set SiteUrl
+  become: yes
+  json_patch:
+    src: "/opt/mattermost/config/config.json"
+    operations:
+      - op: replace
+        path: "/ServiceSettings/SiteURL"
+        value: "{{siteUrl}}"
+
+- name: set DriverName
+  become: yes
+  json_patch:
+    src: "/opt/mattermost/config/config.json"
+    operations:
+      - op: replace
+        path: /SqlSettings/DataSource
+        value: "{{dbType}}"
+
+- name: set Datasource
+  become: yes
+  json_patch:
+    src: "/opt/mattermost/config/config.json"
+    operations:
+      - op: replace
+        path: "/SqlSettings/DataSource"
+        value: "{{dataSource}}"
+
+- name: Create mattermost systemd unit file
+  become: yes
+  template: 
+    src: mattermost.service 
+    dest: /lib/systemd/system/mattermost.service
+    owner: "{{mattermostUser}}"
+    group: "{{mattermostGroup}}"
+
+- name: Make system load the new unit
+  become: yes
+  systemd: 
+    daemon_reload: yes
+
+- name: Start and enable mattermost service
+  become: yes
+  service: 
+    name: mattermost 
+    state: started
+    enabled: yes
+
+- name: Check to see if mattermost is running
+  uri:
+    url: http://localhost:8065
+    return_content: yes
+

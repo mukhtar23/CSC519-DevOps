@@ -1,0 +1,14 @@
+# could potentially be used as variables for downloading and extracting mattermost files
+# mattermostUrl: https://releases.mattermost.com/5.19.1/mattermost-5.19.1-linux-amd64.tar.gz
+# mattermostTar: /home/vagrant/mattermost-5.19.1-linux-amd64.tar.gz
+
+mattermostVersion: 5.19.1
+
+installDir: /home/vagrant/
+
+mattermostUser: mattermost
+mattermostGroup: mattermost
+
+dbType: "mysql"
+dataSource:  "mmuser:mmuser@tcp(192.168.33.80:3306)/mattermost?charset=utf8mb4,utf8&readTimeout=30s&writeTimeout=30s"
+siteUrl: "http://192.168.33.80:8065"

@@ -1,0 +1,16 @@
+---
+
+- name: Create a new database with name 'mattermost'
+  become: yes 
+  mysql_db:
+    name: "{{dbName}}"
+    state: present
+
+- name: Create database user with all database privileges
+  become: yes
+  mysql_user:
+    name: "{{dbUsername}}"
+    password: "{{dbPassword}}"
+    priv: '*.*:ALL,GRANT'
+    host: '%'
+    state: present

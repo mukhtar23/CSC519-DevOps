@@ -1,0 +1,16 @@
+---
+
+- name: install pexpect
+  become: yes
+  apt:
+    pkg: python-pexpect
+
+- name: install python pymysql
+  become: yes
+  apt:
+    pkg: python-pymysql
+
+- name: install python 3 pymysql
+  become: yes
+  apt:
+    pkg: python3-pymysql
