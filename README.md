@@ -12,7 +12,7 @@ HW1: Basic Virtualization
 
 HW2: Configuration Management
 
-HW2: Caching with Redis
+HW3: Caching with Redis
 
 HW4: Monitoring
 
