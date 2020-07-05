@@ -11,3 +11,9 @@ HW0: Provisioning Cloud Providers
 HW1: Basic Virtualization
 
 HW2: Configuration Management
+
+HW2: Caching with Redis
+
+HW4: Monitoring
+
+Project: Building a continous delivery pipeline from scratch
