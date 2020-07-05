@@ -16,4 +16,4 @@ HW3: Caching with Redis
 
 HW4: Monitoring
 
-Project: Building a continous delivery pipeline from scratch
+Project: Building a continuous delivery pipeline from scratch
