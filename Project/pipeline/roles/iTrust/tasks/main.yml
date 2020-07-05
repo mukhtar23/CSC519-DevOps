@@ -1,0 +1,122 @@
+---
+- name: update/upgrade apt
+  apt:
+    update_cache: yes
+    upgrade: yes
+
+# The following are necessary for the installation of mysql for iTrust
+
+- name: install pexpect
+  apt:
+    name: python-pexpect
+
+- name: Install pip3 for iTrust
+  apt: 
+    pkg: ['python3-pip', python3-setuptools]
+    update_cache: yes
+
+- name: Install pip2 for itrust 
+  command: apt install -y python-pip
+
+- name: Install pymsql
+  pip:
+    name: pymysql
+
+# - name: Adds Python MySQL support on Debian/Ubuntu
+#   apt: 
+#     pkg: python-mysqldb
+#     state: present
+
+- name: Set MySQL root password before installing
+  debconf: 
+    name: mysql-server
+    question: mysql-server/root_password
+    value: "{{ mysql_pass }}"
+    vtype: password
+
+- name: Confirm MySQL root password before installing
+  debconf: 
+    name: mysql-server
+    question: mysql-server/root_password_again
+    value: "{{ mysql_pass }}"
+    vtype: password
+    
+- name: install mysql
+  apt:
+    pkg: mysql-server
+    
+- name: Start the MySQL service
+  service: 
+    name: mysql 
+    state: started
+
+# Mysql secure installation steps
+
+- name: Set the root password 
+  mysql_user: login_user="{{ mysql_user }}" login_password="{{ mysql_pass }}" user="{{ mysql_user }}" password="{{ mysql_pass }}"
+
+- name: Secure the root user for IPV6 localhost (::1)
+  mysql_user: login_user="{{ mysql_user }}" login_password="{{ mysql_pass }}" user="{{ mysql_user }}" password="{{ mysql_pass }}" host="::1"
+
+- name: Secure the root user for IPV4 localhost (127.0.0.1)
+  mysql_user: login_user="{{ mysql_user }}" login_password="{{ mysql_pass }}" user="{{ mysql_user }}" password="{{ mysql_pass }}" host="127.0.0.1"
+
+- name: Secure the root user for localhost domain
+  mysql_user: login_user="{{ mysql_user }}" login_password="{{ mysql_pass }}" user="{{ mysql_user }}" password="{{ mysql_pass }}" host="localhost"
+
+- name: Secure the root user for server_hostname domain
+  mysql_user: login_user="{{ mysql_user }}" login_password="{{ mysql_pass }}" user="{{ mysql_user }}" password="{{ mysql_pass }}" host=""{{ ansible_fqdn }}""
+
+- name: Deletes anonymous server user
+  mysql_user: login_user="{{ mysql_user }}" login_password="{{ mysql_pass }}" user="" host_all=yes state=absent
+
+- name: Removes the test database
+  mysql_db: login_user="{{ mysql_user }}" login_password="{{ mysql_pass }}" db=test state=absent
+
+- name: Copy .my.cnf file with root password credentials.
+  template:
+    src: root-my.cnf.j2
+    dest: .my.cnf
+    owner: root
+    group: root
+    mode: 0600
+
+# end of mysql secure installation steps
+
+# The following are necessary for the installation of maven and cloning of iTrust
+- name: install maven
+  apt:
+    name: maven
+
+- name: Create iTrust build yml
+  template:
+    src: itrust_job.j2
+    dest: /tmp/itrust_job.yml
+
+- name: install chrome dependencies
+  apt:
+    pkg:
+      - libxss1
+      - libappindicator1
+      - libindicator7
+
+- name: Download file and force basic auth
+  get_url:
+    url: https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+    dest: /tmp/
+    force_basic_auth: yes
+
+    
+- name: complete chrome installation
+  command: bash -c " cd /tmp/ ; apt install ./google-chrome*.deb -y"
+
+- name: Save gh username/pass for cloning repo during useful-test
+  lineinfile:
+    path: /etc/environment
+    line: "gh_user={{githubuser | urlencode}}\ngh_pass={{githubpassword | urlencode }}"
+    create: yes
+
+- name: Create iTrust war build yml
+  template:
+    src: itrust_war_job.j2
+    dest: /tmp/itrust_war_job.yml

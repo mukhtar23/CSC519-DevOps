@@ -1,0 +1,75 @@
+- name: Install the gpg key for nodejs LTS
+  apt_key:
+    url: "https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
+    state: present
+
+- name: Install the nodejs LTS repos
+  apt_repository:
+    repo: "deb https://deb.nodesource.com/node_12.x {{ ansible_distribution_release }} main"
+    state: present
+    update_cache: yes
+
+- name: Install the nodejs & npm (included with install of nodejs version >12)
+  apt:
+    name: nodejs
+    state: present
+
+- name: Install forever
+  command: npm install forever -g
+
+# Install and start redis server
+
+- name: Install redis-server
+  command: apt-get install redis-server -y
+
+- name: Start redis server
+  command: bash -c "systemctl stop redis-server; systemctl start redis-server"
+
+# - debug: var=hostvars[inventory_hostname]['groups']['checkbox'][0]
+
+# Declare cloud vm ip addresses as environment variables
+- name: Set checkbox ip addresses as environment variables
+  lineinfile:
+    path: /etc/environment
+    regexp: '^CHECKBOX_IP=.+'
+    line: "CHECKBOX_IP={{hostvars[inventory_hostname]['groups']['checkbox'][0]}}"
+    create: yes
+
+- name: Set itrust ip addresses as environment variables
+  lineinfile:
+    path: /etc/environment
+    regexp: '^ITRUST_IP=.+'
+    line: "ITRUST_IP={{hostvars[inventory_hostname]['groups']['itrust'][0]}}"
+    create: yes
+
+- name: Set monitor ip addresses as environment variables
+  lineinfile:
+    path: /etc/environment
+    regexp: '^MONITOR_IP=.+'
+    line: "MONITOR_IP={{hostvars[inventory_hostname]['groups']['monitor'][0]}}"
+    create: yes
+
+- name: Set redis config to have an open conection
+  lineinfile:
+    path: /etc/redis/redis.conf
+    regexp: '^bind 127.0.0.1 ::1'
+    line: "bind 0.0.0.0 ::1"
+    create: yes
+
+- name: Restart redis server
+  command: bash -c "systemctl restart redis-server"
+
+# Setting up monitor
+- name: copy dashboard directory to a monitor vm
+  copy:
+    directory_mode: yes
+    src: /bakerx/cloud_monitor
+    dest: /tmp
+
+- name: NPM install for dashboard
+  command: bash -c " cd /tmp/cloud_monitor ; npm install "
+
+- name: Run Dashboard Monitoring
+  command: bash -c "cd /tmp/cloud_monitor && forever stopall && forever start bin/www monitor"
+
+

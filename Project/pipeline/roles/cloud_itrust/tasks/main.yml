@@ -1,0 +1,155 @@
+---
+
+- name: Update/Upgrade apt in jenkins server
+  apt:
+    update_cache: yes
+
+- name: Install java 8 - jenkins dependency
+  command: apt install openjdk-8-jdk -y
+
+- name: Install the gpg key for nodejs LTS
+  apt_key:
+    url: "https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
+    state: present
+
+- name: Install the nodejs LTS repos
+  apt_repository:
+    repo: "deb https://deb.nodesource.com/node_12.x {{ ansible_distribution_release }} main"
+    state: present
+    update_cache: yes
+
+- name: Install the nodejs & npm (included with install of nodejs version >12)
+  apt:
+    name: nodejs
+    state: present
+
+- name: Install forever
+  command: npm install forever -g
+
+# installing and running tomcat
+
+- name: create /opt/tomcat directory
+  file:
+    path: /opt/tomcat
+    state: directory
+    mode: 0755
+
+- name: add tomcat group
+  group:
+    name: tomcat
+
+- name: add tomcat user
+  user:
+    name: tomcat
+    group: tomcat
+    home: /opt/tomcat
+
+- name: download & unarchive
+  unarchive:
+    src: https://mirrors.koehn.com/apache/tomcat/tomcat-9/v9.0.34/bin/apache-tomcat-9.0.34.tar.gz
+    dest: /opt/tomcat
+    remote_src: yes
+    extra_opts: [--strip-components=1]
+
+- name: Change ownership
+  file:
+    path: /opt/tomcat
+    owner: tomcat
+    group: tomcat
+    mode: "u+rwx,g+rx,o=rx"
+    recurse: yes
+    state: directory
+
+- name: Copy Tomcat service from local to remote
+  copy:
+    src: tomcat.service
+    dest: /etc/systemd/system/
+    mode: 0644
+
+- name: Start and enable Tomcat service
+  systemd:
+    name: tomcat
+    state: started
+    enabled: true
+    daemon_reload: true
+
+# war file deployment
+
+# copy war file to tomcast server
+
+- name: copy war file to itrust cloud vm
+  copy:
+    src: /var/lib/jenkins/workspace/iTrust_war/iTrust2-v6/iTrust2/target/iTrust2.war
+    dest: /opt/tomcat/webapps
+
+- name: copy dump
+  copy:
+    src: /tmp/iTrust2.sql
+    dest: /tmp/iTrust2.sql
+
+- name: create iTrust2 db
+  mysql_db:
+    name: iTrust2
+    state: present
+    login_user: "{{mysql_user}}"
+    login_password: "{{mysql_password}}"
+
+- name: Dump .sql to database
+  mysql_db:
+    name: iTrust2
+    state: import
+    target: /tmp/iTrust2.sql
+    login_user: "{{mysql_user}}"
+    login_password: "{{mysql_password}}"
+
+- name: restart Tomcat service
+  systemd:
+    name: tomcat
+    state: restarted
+
+# Declare cloud vm ip addresses as environment variables
+- name: Set checkbox ip addresses as environment variables
+  lineinfile:
+    path: /etc/environment
+    regexp: '^CHECKBOX_IP=.+'
+    line: "CHECKBOX_IP={{hostvars[inventory_hostname]['groups']['checkbox'][0]}}"
+    create: yes
+
+- name: Set itrust ip addresses as environment variables
+  lineinfile:
+    path: /etc/environment
+    regexp: '^ITRUST_IP=.+'
+    line: "ITRUST_IP={{hostvars[inventory_hostname]['groups']['itrust'][0]}}"
+    create: yes
+
+- name: Set monitor ip addresses as environment variables
+  lineinfile:
+    path: /etc/environment
+    regexp: '^MONITOR_IP=.+'
+    line: "MONITOR_IP={{hostvars[inventory_hostname]['groups']['monitor'][0]}}"
+    create: yes
+
+# - name: get ip address node1
+#   debug: 
+#     msg: "MONITOR_IP={{hostvars[ansible_default_ipv4.address]['groups']['checkbox'][0]}}"
+
+# copy over agent files to itrust server
+
+- name: copy agent js file
+  copy:
+    src: /bakerx/cloud_agent/index.js
+    dest: /tmp
+
+- name: copy agent package json file
+  copy:
+    src: /bakerx/cloud_agent/package.json
+    dest: /tmp
+
+- name: Install packages for agents
+  command: bash -c "cd /tmp && npm install"
+
+- name: Stop any running forever process
+  command: forever stopall
+
+- name: Start agent
+  command: forever start /tmp/index.js itrust

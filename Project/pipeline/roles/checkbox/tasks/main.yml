@@ -1,0 +1,31 @@
+- name: Install the gpg key for nodejs LTS
+  apt_key:
+    url: "https://deb.nodesource.com/gpgkey/nodesource.gpg.key"
+    state: present
+
+- name: Install the nodejs LTS repos
+  apt_repository:
+    repo: "deb https://deb.nodesource.com/node_12.x {{ ansible_distribution_release }} main"
+    state: present
+    update_cache: yes
+
+- name: Install the nodejs & npm (included with install of nodejs version >12)
+  apt:
+    name: nodejs
+    state: present
+  
+- name: Install nginx
+  apt:
+    update_cache: yes
+    name: nginx
+    state: present
+
+- name: Install pm2
+  command: npm install -g pm2
+
+- name: Install esprima
+  command: npm install esprima
+
+- name: Install glob
+  command: npm install glob
+

@@ -1,0 +1,3 @@
+---
+vars:
+  ansible_user: vagrant

@@ -1,0 +1,110 @@
+---
+- include_vars: main.yml
+
+# - name: Set environment variable
+#   lineinfile:
+#     path: /etc/environment
+#     line: "APP_PORT={{ app_port }}\n MONGO_PORT={{ mongo_port }}\n MONGO_USER={{ mongo_user }}\n MONGO_PASSWORD={{ mongo_password }}\n MONGO_IP={{ mongo_ip }}"
+#     create: yes
+
+- name: Install pip for jenkins
+  command: apt install -y python-pip
+
+- name: Update/Upgrade apt in jenkins server
+  apt:
+    update_cache: yes
+
+- name: Install java 8 - jenkins dependency
+  command: apt install openjdk-8-jdk -y
+
+- name: Install key for the Jenkins apt repository
+  apt_key:
+    url: "https://pkg.jenkins.io/debian/jenkins-ci.org.key"
+    state: present
+
+- name: Install access to the Jenkins apt repository
+  apt_repository:
+    repo: deb http://pkg.jenkins.io/debian-stable binary/
+    state: present
+    filename: 'jenkins-access'
+
+- name: Update/upgrade apt in jenkins server
+  apt:
+    update_cache: yes
+
+- name: Install Jenkins package
+  command: apt install jenkins -y
+  
+- name: Start jenkins on boot
+  service:
+    name: jenkins
+    state: started
+    enabled: yes
+  
+- name: Create init directory
+  become: yes
+  file:
+    path: /var/lib/jenkins/init.groovy.d
+    state: directory
+
+- name: Create jenkins wizard script
+  become: yes
+  template:
+    src: basic-security.groovy
+    dest: /var/lib/jenkins/init.groovy.d
+
+- name: Disable setup wizard
+  lineinfile:
+    path: /etc/default/jenkins
+    regexp: '^JAVA_ARGS='
+    line: JAVA_ARGS="-Djava.awt.headless=true -Djenkins.install.runSetupWizard=false"
+
+- name: Change server port to 9000
+  lineinfile:
+    path: /etc/default/jenkins
+    regexp: '^HTTP_PORT='
+    line: HTTP_PORT=9000
+
+- name: Restart service jenkins
+  service:
+    name: jenkins
+    state: restarted
+
+- name: Clone jenkins job builder repo
+  git:
+    repo: 'https://opendev.org/jjb/jenkins-job-builder.git'
+    dest: jenkins-job-builder
+
+- name: Run setup.py in repo
+  command: bash -c "cd jenkins-job-builder ; sudo python setup.py install ; cd ..; pip install jenkins-job-builder"
+  # shell: cd jenkins-job-builder ; sudo python setup.py install ; cd ..; pip install jenkins-job-builder
+
+- name: Install Jenkins plugins
+  jenkins_plugin:
+      name: "{{ item }}"
+      url_username: "{{ jenkins_username }}"
+      url_password: "{{ jenkins_password }}"
+      state: present
+      timeout: 60
+      url: http://192.168.33.20:9000
+  register: plugin_result
+  until: plugin_result is success
+  retries: 10
+  delay: 10
+  with_items: 
+      - git
+
+- name: Restart service jenkins
+  service:
+    name: jenkins
+    state: restarted
+
+- name: Create jenkins.ini file
+  template:
+    src: jenkins_conf.j2
+    dest: /tmp/jenkins_jobs.ini
+
+- name: Create jenkins build yml
+  template:
+    src: checkbox_io_job.j2
+    dest: /tmp/checkbox_io_job.yml

@@ -1,0 +1,15 @@
+extends layout
+
+block content
+  h1= title
+  p 🐈Welcome to #{title} 😻
+  
+  h3="Recent uploads"
+  for meow in recentUploads
+    img(src="data:my_pic.jpg;base64," + meow, width="150px")
+
+  h3="Best cat facts"
+  for cf in bestFacts
+    div 
+      span #{cf.fact} #{' '}
+      span #{cf.votes}

@@ -1,0 +1,6 @@
+--- 
+
+- hosts: monitor
+  become: yes
+  roles:
+    - cloud_monitor

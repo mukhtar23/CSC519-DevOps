@@ -1,0 +1,18 @@
+- job:
+    name: iTrust
+    description: 'Automatically create iTrust job'
+    project-type: freestyle
+    builders:
+        - shell: "if [ ! -d /var/lib/jenkins/workspace/iTrust/iTrust2-v6/ ]\n
+        then\n
+            git clone https://{{githubuser | urlencode}}:{{githubpassword | urlencode }}@github.ncsu.edu/engr-csc326-staff/iTrust2-v6.git\n
+        fi\n
+        cp iTrust2-v6/iTrust2/src/main/java/db.properties.template iTrust2-v6/iTrust2/src/main/java/db.properties\n
+        sed -i 's/password/password {{ mysql_pass }}/g' iTrust2-v6/iTrust2/src/main/java/db.properties\n
+        sed -i 's/[[:space:]]*$//' iTrust2-v6/iTrust2/src/main/java/db.properties\n
+        cp iTrust2-v6/iTrust2/src/main/java/email.properties.template iTrust2-v6/iTrust2/src/main/java/email.properties\n
+        sed -i 's/from/from {{dev_email}}/g' iTrust2-v6/iTrust2/src/main/java/email.properties\n
+        sed -i 's/username/username {{dev_email}}/g' iTrust2-v6/iTrust2/src/main/java/email.properties\n
+        sed -i 's/password/password {{dev_pass}}/g' iTrust2-v6/iTrust2/src/main/java/email.properties\n    
+        cd iTrust2-v6/iTrust2/ \n mvn -f pom-data.xml process-test-classes\n
+        mvn clean test verify org.apache.maven.plugins:maven-checkstyle-plugin:3.1.0:checkstyle\n"

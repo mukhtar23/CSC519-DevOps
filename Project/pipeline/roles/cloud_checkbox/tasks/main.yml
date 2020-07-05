@@ -1,0 +1,89 @@
+---
+
+- name: Install Forever
+  command: npm install forever -g
+
+- name: Checks if checkbox.io already exists
+  command: bash -c "cd /tmp; if [ -d "checkbox.io" ]; then rm -Rf "checkbox.io"; fi"
+
+- name: Clone Checkbox.io
+  git:
+    repo: 'https://github.com/chrisparnin/checkbox.io.git'
+    dest: /tmp/checkbox.io
+
+- name: Install NPM Dependencies for Checkbox.io
+  npm:
+    path: /tmp/checkbox.io/server-side/site
+    state: latest
+
+- name: Replace Default Nginx Configuration
+  copy:
+    src: default
+    dest: /etc/nginx/sites-available/default
+
+- name: Start Nginx Service
+  systemd:
+    state: reloaded
+    name: nginx
+
+# Install and start redis server
+
+- name: Install redis-server
+  command: apt-get install redis-server -y
+
+- name: Start redis server
+  command: bash -c "systemctl stop redis-server; systemctl start redis-server"
+
+# Declare cloud vm ip addresses as environment variables
+- name: Set checkbox ip addresses as environment variables
+  lineinfile:
+    path: /etc/environment
+    regexp: '^CHECKBOX_IP=.+'
+    line: "CHECKBOX_IP={{hostvars[inventory_hostname]['groups']['checkbox'][0]}}"
+    create: yes
+
+- name: Set itrust ip addresses as environment variables
+  lineinfile:
+    path: /etc/environment
+    regexp: '^ITRUST_IP=.+'
+    line: "ITRUST_IP={{hostvars[inventory_hostname]['groups']['itrust'][0]}}"
+    create: yes
+
+- name: Set monitor ip addresses as environment variables
+  lineinfile:
+    path: /etc/environment
+    regexp: '^MONITOR_IP=.+'
+    line: "MONITOR_IP={{hostvars[inventory_hostname]['groups']['monitor'][0]}}"
+    create: yes
+
+# copy over agent files to itrust server
+
+- name: copy agent js file
+  copy:
+    src: /bakerx/cloud_agent/index.js
+    dest: /tmp
+
+- name: copy agent package json file
+  copy:
+    src: /bakerx/cloud_agent/package.json
+    dest: /tmp
+
+- name: Install packages for agents
+  command: bash -c "cd /tmp ; npm install"
+
+
+- name: Stop any existing forever processes
+  command: forever stopall
+
+
+- name: Start checkbox
+  command: forever start --sourceDir /tmp/checkbox.io/server-side/site/ server.js server
+  environment:
+    APP_PORT: "{{app_port}}"
+    MONGO_PORT: "{{mongo_port}}"
+    MONGO_USER: "{{mongo_user}}"
+    MONGO_PASSWORD: "{{mongo_password}}"
+    MONGO_IP: "{{mongo_ip}}"
+
+- name: Start agent
+  command: forever start /tmp/index.js checkbox

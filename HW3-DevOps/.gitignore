@@ -1,0 +1,5 @@
+node_modules/
+uploads/
+meowio.db
+dump.rdb
+.DS_Store

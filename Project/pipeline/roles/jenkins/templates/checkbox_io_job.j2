@@ -1,0 +1,20 @@
+- job:
+    name: checkbox.io
+    description: 'Automatically create checkbox.io job'
+    project-type: freestyle
+    builders:
+        - shell: "if [ -d /var/lib/jenkins/workspace/checkbox.io/checkbox.io ]\n
+        then\n
+        rm -rf /var/lib/jenkins/workspace/checkbox.io/checkbox.io\n
+        fi\n
+
+        git clone https://github.com/chrisparnin/checkbox.io.git\n
+        
+        node /bakerx/test/analysis.js '/var/lib/jenkins/workspace/checkbox.io/checkbox.io/server-side/'\n
+
+        cd checkbox.io/server-side/site\n
+        npm install\n
+
+        pm2 start server.js\n
+        npm test\n
+        pm2 stop server.js\n"

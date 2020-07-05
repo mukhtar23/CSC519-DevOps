@@ -1,0 +1,25 @@
+---
+- name: Creates directory
+  file:
+    path: .bakerx
+    state: directory
+    owner: "{{ansible_user}}"
+    group: "{{ansible_user}}"
+    mode: '700'
+
+- name: Copy file into place
+  template:
+    src: insecure_private_key
+    dest: .bakerx/insecure_private_key
+    owner: "{{ansible_user}}"
+    group: "{{ansible_user}}"
+    mode: '600'
+
+
+- name: Set ssh host key checcking to false
+  lineinfile:
+    path: /etc/ansible/ansible.cfg
+    regexp: '^#host_key_checking = False'
+    line: "host_key_checking = False"
+    create: yes
+    
